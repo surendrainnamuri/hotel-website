@@ -1,18 +1,41 @@
-apiVersion: tekton.dev/v1
-kind: PipelineRun
-metadata:
-  generateName: hotel-website-push-
-  annotations:
-    pipelinesascode.tekton.dev/on-event: "[push]"
-    pipelinesascode.tekton.dev/on-target-branch: "[main]"
 spec:
   pipelineSpec:
     tasks:
-      - name: test-trigger
+      - name: validate
         taskSpec:
           steps:
-            - name: echo
+            - name: validate-html
               image: registry.access.redhat.com/ubi9/ubi-minimal
               script: |
                 #!/usr/bin/env sh
-                echo "Hotel website pipeline triggered"
+                echo "Stage 1: validating website files"
+
+      - name: test
+        runAfter: ["validate"]
+        taskSpec:
+          steps:
+            - name: run-tests
+              image: registry.access.redhat.com/ubi9/ubi-minimal
+              script: |
+                #!/usr/bin/env sh
+                echo "Stage 2: running tests"
+
+      - name: build
+        runAfter: ["test"]
+        taskSpec:
+          steps:
+            - name: build-site
+              image: registry.access.redhat.com/ubi9/ubi-minimal
+              script: |
+                #!/usr/bin/env sh
+                echo "Stage 3: building hotel website"
+
+      - name: deploy
+        runAfter: ["build"]
+        taskSpec:
+          steps:
+            - name: deploy-site
+              image: registry.access.redhat.com/ubi9/ubi-minimal
+              script: |
+                #!/usr/bin/env sh
+                echo "Stage 4: deploy placeholder"
